@@ -1,0 +1,23 @@
+targets:
+  - name: Riot Games
+    type: http
+    url: https://riotgames.com
+
+  - name: Steam
+    type: http
+    url: https://store.steampowered.com
+
+  - name: Google DNS
+    type: tcp
+    host: 8.8.8.8
+    port: 53
+
+  - name: Hypixel (Minecraft)
+    type: tcp
+    host: mc.hypixel.net
+    port: 25565
+
+  - name: Random
+    type: tcp
+    host: random.net
+    port: 32

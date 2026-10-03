@@ -1,15 +1,38 @@
+import asyncio
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+
+import time
+
 from fastapi import FastAPI
 
-from app.checker import check_http
+from app.checker import check_all
+from app.config import load_targets
 
-app = FastAPI(title = "Pingboard")
+CHECK_INTERVAL_SECONDS = 60
+latest = {"checked_at": None, "results": []}
 
-TARGETS = [
-{"name": "Riot Games", "url": "https://riotgames.com"}, 
-{"name": "Steam", "url": "https://store.steampowered.com"}, 
-{"name": "Google", "url": "https://google.com"},
-{"name": "TEST", "url": "https://this-site-does-not-exist-pingboard.com"}
-]
+
+async def check_loop():
+    while True:
+        try:
+            start = time.perf_counter()
+            latest["results"] = await check_all(load_targets())
+            latest["duration_ms"] = round((time.perf_counter() - start) * 1000)
+            latest["checked_at"] = datetime.now(timezone.utc).isoformat()
+        except Exception as error:
+            print(f"Check round failed: {error!r}")
+        await asyncio.sleep(CHECK_INTERVAL_SECONDS)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(check_loop())
+    yield
+    task.cancel()
+
+
+app = FastAPI(title="Pingboard", lifespan=lifespan)
 
 @app.get("/")
 def home():
@@ -21,14 +44,8 @@ def healthz():
 
 @app.get("/api/targets")
 def targets():
-    return TARGETS
+    return load_targets()
 
 @app.get("/api/status")
 def status():
-    results = []
-    for target in TARGETS:
-        result = check_http(target["url"])
-        result["name"] = target["name"]
-        results.append(result)
-
-    return results
+    return latest
