@@ -17,7 +17,7 @@ from app.config import load_targets
 from pathlib import Path
 
 SLOW_THRESHOLD_MS = 500
-CHECK_INTERVAL_SECONDS = 60
+CHECK_INTERVAL_SECONDS = 30
 latest = {"checked_at": None, "results": []}
 
 templates = Jinja2Templates(directory  = Path(__file__).parent / "templates")
