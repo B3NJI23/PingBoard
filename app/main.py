@@ -6,6 +6,8 @@ import time
 
 from fastapi import FastAPI
 
+from app.db import get_uptime, init_db, save_results
+
 from app.checker import check_all
 from app.config import load_targets
 
@@ -17,9 +19,12 @@ async def check_loop():
     while True:
         try:
             start = time.perf_counter()
-            latest["results"] = await check_all(load_targets())
+            results = await check_all(load_targets())
+            checked_at = datetime.now(timezone.utc).isoformat()
+            save_results(checked_at, results)
+            latest["results"] = results
+            latest["checked_at"] = checked_at
             latest["duration_ms"] = round((time.perf_counter() - start) * 1000)
-            latest["checked_at"] = datetime.now(timezone.utc).isoformat()
         except Exception as error:
             print(f"Check round failed: {error!r}")
         await asyncio.sleep(CHECK_INTERVAL_SECONDS)
@@ -27,6 +32,7 @@ async def check_loop():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    init_db()
     task = asyncio.create_task(check_loop())
     yield
     task.cancel()
@@ -49,3 +55,7 @@ def targets():
 @app.get("/api/status")
 def status():
     return latest
+
+@app.get("/api/uptime")
+def uptime(hours : int = 24):
+    return get_uptime(hours)
