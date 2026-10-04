@@ -57,3 +57,17 @@ def get_uptime(hours : int = 24) -> list[dict]:
 """, (since,)).fetchall()
 
     return [dict(row) for row in rows]
+
+def get_last_down(hours : int = 24) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT name,
+                MAX(checked_at) AS last_down,
+                COUNT(*) AS down_checks
+            FROM checks
+            WHERE up = 0
+            GROUP BY name
+            ORDER BY name
+""",).fetchall()
+
+    return [dict(row) for row in rows]

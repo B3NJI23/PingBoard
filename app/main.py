@@ -6,7 +6,7 @@ import time
 
 from fastapi import FastAPI
 
-from app.db import get_uptime, init_db, save_results
+from app.db import get_uptime, init_db, save_results, get_last_down
 
 from app.checker import check_all
 from app.config import load_targets
@@ -59,3 +59,7 @@ def status():
 @app.get("/api/uptime")
 def uptime(hours : int = 24):
     return get_uptime(hours)
+
+@app.get("/api/lastdown")
+def lastdown(hours : int = 24):
+    return get_last_down(hours)
