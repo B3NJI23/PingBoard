@@ -5,15 +5,22 @@ from datetime import datetime, timezone
 import time
 
 from fastapi import FastAPI
+from fastapi import Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from app.db import get_uptime, init_db, save_results, get_last_down
 
 from app.checker import check_all
 from app.config import load_targets
 
+from pathlib import Path
+
+SLOW_THRESHOLD_MS = 500
 CHECK_INTERVAL_SECONDS = 60
 latest = {"checked_at": None, "results": []}
 
+templates = Jinja2Templates(directory  = Path(__file__).parent / "templates")
 
 async def check_loop():
     while True:
@@ -40,9 +47,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Pingboard", lifespan=lifespan)
 
-@app.get("/")
-def home():
-    return {"message": "Pingboard is alive!"}
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    uptime_by_name = {row["name"]: row for row in get_uptime(24)}
+    return templates.TemplateResponse(
+        request, "index.html", {"latest": latest, "uptime": uptime_by_name, "SLOW_THRESHOLD_MS": SLOW_THRESHOLD_MS}
+    )
 
 @app.get("/healthz")
 def healthz():

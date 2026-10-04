@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="30">
+  <title>Pingboard</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #111827; color: #e5e7eb; margin: 0; padding: 2rem; }
+    h1 { margin: 0 0 0.25rem; }
+    .meta { color: #9ca3af; margin-bottom: 1.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+    .card { background: #1f2937; border-radius: 10px; padding: 1rem; border-left: 6px solid; }
+    .up { border-color: #22c55e; }
+    .down { border-color: #ef4444; }
+    .name { font-weight: 600; font-size: 1.1rem; }
+    .address, .detail { color: #9ca3af; font-size: 0.9rem; margin-top: 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Pingboard</h1>
+  <p class="meta">🟡 = slower than {{ SLOW_THRESHOLD_MS }} ms</p>
+  <p class="meta">
+    {% if latest.checked_at %}
+      Last check: {{ latest.checked_at }} · took {{ latest.duration_ms }} ms
+    {% else %}
+      Waiting for the first check...
+    {% endif %}
+  </p>
+
+<div class="grid">
+  {% for r in latest.results %}
+    {% if not r.up %}
+      {% set state = 'down' %}
+    {% elif r.response_ms > SLOW_THRESHOLD_MS %}
+      {% set state = 'slow' %}
+    {% else %}
+      {% set state = 'up' %}
+    {% endif %}
+
+    <div class="card {{ state }}">
+      <div class="name">{{ {'up': '🟢', 'slow': '🟡', 'down': '🔴'}[state] }} {{ r.name }}</div>
+      <div class="address">{{ r.address }}</div>
+      <div class="detail">
+        {% if r.up %}{{ r.response_ms }} ms{% else %}{{ r.error or 'Down' }}{% endif %}
+        · 24h uptime: {{ uptime[r.name].uptime_percent if r.name in uptime else '–' }}%
+      </div>
+    </div>
+  {% endfor %}
+</div>
+</body>
+</html>

@@ -31,7 +31,7 @@ def save_results(checked_at : str, results : list[dict]) -> None:
         (checked_at, r["name"], r["type"], r["address"], int(r["up"]), 
          r["status_code"], r["response_ms"], r.get("error"))
          for r in results
-    ]
+    ] 
 
     with get_connection() as conn:
         conn.executemany(
